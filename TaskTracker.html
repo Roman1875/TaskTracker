@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="uk">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TaskTracker — Kanban</title>
+<style>
+:root{color-scheme:light dark;--bg:#fff;--surface:#f9f8f7;--card:#fff;--text:#2c2c2b;--muted:#686560;--border:#d8d7d4;--blue:#1769b6;--tint:#e5f2fc}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:16px/1.5 system-ui,sans-serif}main{max-width:1120px;margin:auto;padding:40px 24px}button,input,textarea,select{font:inherit}button,input,select{min-height:44px}button{cursor:pointer;border:1px solid var(--border);border-radius:8px;padding:8px 14px;background:var(--card);color:var(--text)}button:hover{border-color:var(--blue)}:focus-visible{outline:3px solid var(--blue);outline-offset:3px}.primary{background:var(--blue);color:#fff;border-color:var(--blue)}header{display:flex;justify-content:space-between;align-items:center;gap:24px}h1{font-size:36px;letter-spacing:-1.4px;margin:0}h2{font-size:18px;margin:0}p{margin:8px 0;color:var(--muted)}.brand{color:var(--blue);font-size:14px;font-weight:650;letter-spacing:2px;text-transform:uppercase}.toolbar{display:flex;gap:12px;margin:32px 0 24px}.toolbar input{flex:1;min-width:0}.toolbar select{max-width:220px}input,textarea,select{border:1px solid var(--border);border-radius:8px;padding:10px 12px;background:var(--card);color:var(--text)}.summary{font-size:14px;margin:0 0 16px}.board{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}.column{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;min-height:340px}.column.dragover{outline:2px solid var(--blue);background:var(--tint)}.column-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;gap:8px}.column-title{display:flex;align-items:center;gap:8px}.dot{width:9px;height:9px;border-radius:50%;background:#777}.doing .dot{background:var(--blue)}.done .dot{background:#278353}.count{font-size:14px;color:var(--muted)}.add{font-size:22px;padding:0;width:44px;flex-shrink:0}.cards{display:flex;flex-direction:column;gap:12px;min-height:220px}.card{border:1px solid var(--border);border-radius:8px;padding:16px;background:var(--card);cursor:grab;overflow-wrap:anywhere}.card h3{font-size:16px;margin:10px 0 4px}.card p{font-size:14px;white-space:pre-wrap}.badge{display:inline-block;font-size:14px;font-weight:600;color:var(--blue)}.badge.high{color:#b33b30}.badge.low{color:#287544}.meta{font-size:14px;color:var(--muted);margin-top:12px}.late{color:#b33b30}.actions{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}.actions button{font-size:14px;flex:1;padding:8px}.empty{font-size:14px;text-align:center;padding:40px 8px;color:var(--muted);border:1px dashed var(--border);border-radius:8px}footer{margin-top:24px;color:var(--muted);font-size:14px}dialog{width:min(520px,calc(100% - 32px));max-height:90vh;overflow:auto;border:1px solid var(--border);border-radius:12px;background:var(--card);color:var(--text);padding:24px}dialog::backdrop{background:rgba(0,0,0,.4)}.dialog-head{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:16px}label{display:block;font-size:14px;font-weight:600;margin:16px 0 6px}form input,form textarea,form select{width:100%}textarea{resize:vertical;min-height:90px}.row{display:grid;grid-template-columns:1fr 1fr;gap:16px}.form-actions{display:flex;justify-content:flex-end;gap:12px;margin-top:24px}#notice{color:#b33b30;min-height:0}#notice:empty{display:none}
+@media(prefers-color-scheme:dark){:root{--bg:#191919;--surface:#202020;--card:#252525;--text:#fff;--muted:#bbb;--border:#575755;--blue:#5e9fe8;--tint:#233342}.primary{background:#246aac;color:#fff}.badge.high,.late,#notice{color:#f28d82}.badge.low{color:#72bc8f}}
+@media(max-width:720px){main{padding:24px 16px}.board{grid-template-columns:1fr}header{align-items:flex-start;flex-direction:column;gap:16px}.toolbar{flex-direction:column;margin-top:24px}.toolbar select{max-width:none}.column{min-height:200px}.cards{min-height:100px}h1{font-size:32px}.row{grid-template-columns:1fr;gap:0}}
+</style>
+</head>
+<body>
+<main>
+<header><div><div class="brand">Особистий робочий простір</div><h1>TaskTracker</h1><p>Менше хаосу. Більше завершених справ.</p></div><button id="new" class="primary">+ Нове завдання</button></header>
+<div class="toolbar"><input id="search" type="search" placeholder="Пошук завдань…" aria-label="Пошук завдань"><select id="filter" aria-label="Фільтр пріоритету"><option value="">Усі пріоритети</option value="high">Високий</option><option value="normal">Звичайний</option><option value="low">Низький</option></select></div>
+<p class="summary" id="summary" aria-live="polite"></p><p id="notice" role="alert"></p>
+<div class="board" id="board"></div>
+<footer>Перетягуйте картки між колонками або змінюйте статус у редакторі. Дані зберігаються тільки в цьому браузері.</footer>
+</main>
+<dialog id="editor"><form id="form"><div class="dialog-head"><h2 id="dialogTitle">Нове завдання</h2><button type="button" id="close" aria-label="Закрити">×</button></div>
+<label for="title">Назва *</label><input id="title" required maxlength="120" placeholder="Що потрібно зробити?">
+<label for="description">Опис</label><textarea id="description" maxlength="3000" placeholder="Деталі та наступні кроки"></textarea>
+<div class="row"><div><label for="priority">Пріоритет</label><select id="priority"><option value="normal">Звичайний</option><option value="high">Високий</option><option value="low">Низький</option></select></div><div><label for="due">Термін виконання</label><input id="due" type="date"></div></div>
+<label for="status">Статус</label><select id="status"><option value="todo">До виконання</option><option value="doing">У роботі</option><option value="done">Готово</option></select>
+<div class="form-actions"><button type="button" id="cancel">Скасувати</button><button class="primary" type="submit">Зберегти</button></div>
+</form></dialog>
+<script>
+'use strict';
+const KEY='tasktracker.tasks.v1';
+const statuses={todo:'До виконання',doing:'У роботі',done:'Готово'};
+const priorities={high:'Високий',normal:'Звичайний',low:'Низький'};
+const $=id=>document.getElementById(id);
+let tasks=[],editing=null,dragged=null;
+function valid(t){return t&&typeof t.id==='string'&&typeof t.title==='string'&&t.title.trim()&&typeof t.description==='string'&&Object.hasOwn(statuses,t.status)&&Object.hasOwn(priorities,t.priority)&&typeof t.due==='string'&&(t.due===''||/^\d{4}-\d{2}-\d{2}$/.test(t.due));}
+try{const saved=localStorage.getItem(KEY);if(saved){const parsed=JSON.parse(saved);if(!Array.isArray(parsed)||!parsed.every(valid))throw Error('invalid');tasks=parsed;}}catch(e){$('notice').textContent='Не вдалося прочитати збережені дані. Не зберігайте зміни, якщо хочете спочатку відновити попередні дані.';}
+function persist(){try{localStorage.setItem(KEY,JSON.stringify(tasks));$('notice').textContent='';}catch(e){$('notice').textContent='Браузер не дозволив зберегти зміни. Вони доступні лише до закриття сторінки.';}render();}
+function el(tag,cls,text){const n=document.createElement(tag);if(cls)n.className=cls;if(text!==undefined)n.textContent=text;return n;}
+function today(){const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}
+function render(){
+ const term=$('search').value.trim().toLocaleLowerCase('uk');const filter=$('filter').value;
+ const visible=tasks.filter(t=>(!filter||t.priority===filter)&&`${t.title} ${t.description}`.toLocaleLowerCase('uk').includes(term));
+ $('summary').textContent=`Усього: ${tasks.length} · Завершено: ${tasks.filter(t=>t.status==='done').length} · На дошці: ${visible.length}`;
+ const board=$('board');board.replaceChildren();
+ for(const [status,label] of Object.entries(statuses)){
+  const column=el('section',`column ${status}`);column.setAttribute('aria-label',label);
+  const head=el('div','column-head'),title=el('div','column-title');title.append(el('span','dot'),el('h2','',label));
+  const list=visible.filter(t=>t.status===status);title.append(el('span','count',String(list.length)));const add=el('button','add','+');add.setAttribute('aria-label',`Додати завдання: ${label}`);add.onclick=()=>openEditor(null,status);head.append(title,add);
+  const cards=el('div','cards');
+  if(!list.length)cards.append(el('div','empty',tasks.some(t=>t.status===status)?'Немає збігів із фільтром':'Тут поки немає завдань'));
+  list.forEach(t=>{
+   const card=el('article','card');card.draggable=true;card.dataset.id=t.id;
+   card.addEventListener('dragstart',e=>{dragged=t.id;e.dataTransfer.setData('text/plain',t.id);e.dataTransfer.effectAllowed='move';});
+   card.addEventListener('dragend',()=>{dragged=null;document.querySelectorAll('.dragover').forEach(c=>c.classList.remove('dragover'));});
+   card.append(el('span',`badge ${t.priority}`,`${priorities[t.priority]} пріоритет`),el('h3','',t.title));
+   if(t.description)card.append(el('p','',t.description));
+   if(t.due){const late=t.status!=='done'&&t.due<today();card.append(el('div',`meta ${late?'late':''}`,`${late?'Прострочено · ': 'Термін · '}${t.due.split('-').reverse().join('.')}`));}
+   const actions=el('div','actions'),edit=el('button','','Редагувати'),del=el('button','','Видалити');
+   edit.setAttribute('aria-label',`Редагувати: ${t.title}`);del.setAttribute('aria-label',`Видалити: ${t.title}`);
+   edit.onclick=()=>openEditor(t);del.onclick=()=>{if(confirm(`Видалити завдання «${t.title}»?`)){tasks=tasks.filter(x=>x.id!==t.id);persist();}};actions.append(edit,del);card.append(actions);cards.append(card);
+  });
+  column.addEventListener('dragover',e=>{if(dragged){e.preventDefault();e.dataTransfer.dropEffect='move';column.classList.add('dragover');}});
+  column.addEventListener('dragleave',e=>{if(!column.contains(e.relatedTarget))column.classList.remove('dragover');});
+  column.addEventListener('drop',e=>{e.preventDefault();column.classList.remove('dragover');const t=tasks.find(x=>x.id===dragged);if(t){t.status=status;persist();}dragged=null;});
+  column.append(head,cards);board.append(column);
+ }
+}
+function openEditor(task=null,status='todo'){
+ editing=task?.id??null;$('form').reset();$('dialogTitle').textContent=task?'Редагування завдання':'Нове завдання';
+ $('title').value=task?.title??'';$('description').value=task?.description??'';$('priority').value=task?.priority??'normal';$('due').value=task?.due??'';$('status').value=task?.status??status;
+ $('editor').showModal();$('title').focus();
+}
+$('form').addEventListener('submit',e=>{e.preventDefault();const title=$('title').value.trim();if(!title){$('title').setCustomValidity('Введіть назву завдання.');$('title').reportValidity();return;}
+ const data={id:editing??(globalThis.crypto?.randomUUID?.()??`${Date.now()}-${Math.random().toString(36).slice(2)}`),title,description:$('description').value.trim(),priority:$('priority').value,due:$('due').value,status:$('status').value};
+ if(editing){tasks=tasks.map(t=>t.id===editing?data:t);}else tasks.push(data);persist();$('editor').close();
+});
+$('title').addEventListener('input',()=>$('title').setCustomValidity(''));
+$('new').onclick=()=>openEditor();$('close').onclick=$('cancel').onclick=()=>$('editor').close();
+$('editor').addEventListener('close',()=>$('title').setCustomValidity(''));
+$('search').addEventListener('input',render);$('filter').addEventListener('change',render);
+window.addEventListener('storage',e=>{if(e.key!==KEY)return;try{const data=JSON.parse(e.newValue??'[]');if(Array.isArray(data)&&data.every(valid)){tasks=data;render();}}catch{}});
+render();
+</script>
+</body></html>
